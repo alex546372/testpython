@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Тест по Python</title>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f7f9fc;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #222;
+    }
+    .question {
+      margin-bottom: 25px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      transition: box-shadow 0.2s ease;
+    }
+    .question:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .question p {
+      margin: 0 0 10px 0;
+      font-weight: bold;
+      color: #333;
+    }
+    pre code {
+      display: block;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .answers label {
+      display: block;
+      margin-bottom: 6px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .answers input {
+      margin-right: 6px;
+    }
+    .answers label:hover {
+      background: #eaf2ff;
+    }
+    button {
+      display: block;
+      background: #0078d7;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 20px auto 0;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    .result {
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 25px;
+      color: #444;
+    }
+    .correct {
+      background: #d4edda !important;
+    }
+    .wrong {
+      background: #f8d7da !important;
+    }
+    .unanswered {
+      background: #fff3cd !important;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Тест по Python (20 вопросов)</h1>
+  <form id="quizForm"></form>
+  <button type="button" onclick="checkAnswers()">Проверить</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const questions = [
+  { q: "Что выведет выражение:", code: "sorted({1,2,3}, reverse=True)[1]", options: ["1","2","3","Ошибка","None"], answer: "2" },
+  { q: "Чему равен результат:", code: "(lambda x: x*2)(5) + (lambda y: y//2)(9)", options: ["14","15","16","17","18"], answer: "16" },
+  { q: "Что выведет:", code: "[i for i in range(3)] * 2 == [[0,1,2],[0,1,2]]", options: ["True","False","Ошибка","None","[]"], answer: "False" },
+  { q: "Какое значение у переменной x после выполнения:", code: "x = [1]; y = x; y.append(2)", options: ["[1]","[1,2]","[2]","Ошибка","None"], answer: "[1,2]" },
+  { q: "Что выведет:", code: "(0 or [] or [0])[0]", options: ["0","[]","Ошибка","None","True"], answer: "0" },
+  { q: "Что выведет:", code: "{True: 'yes', 1: 'no'}[True]", options: ["yes","no","Ошибка","None","1"], answer: "no" },
+  { q: "Что вернет выражение:", code: "all([])", options: ["True","False","Ошибка","None","[]"], answer: "True" },
+  { q: "Что будет в результате:", code: "list(map(lambda x: x**2, filter(lambda x: x%2, range(5))))", options: ["[1,9]","[0,4,16]","[1,4,9,16]","[9]","[25]"], answer: "[1,9]" },
+  { q: "Что вернет:", code: "(a:=5) + (b:=a*2)", options: ["5","10","15","20","Ошибка"], answer: "15" },
+  { q: "Что будет:", code: "''.join(sorted('cba'))", options: ["abc","cba","bac","cab","Ошибка"], answer: "abc" },
+  { q: "Что будет:", code: "{i:i*i for i in range(3)}[2]", options: ["2","3","4","Ошибка","None"], answer: "4" },
+  { q: "Что вернет:", code: "len(set([1,1,1,2,2,3]))", options: ["1","2","3","4","Ошибка"], answer: "3" },
+  { q: "Что выведет:", code: "bool('False')", options: ["True","False","Ошибка","None","0"], answer: "True" },
+  { q: "Что будет:", code: "(lambda f: f(f))(lambda x: 1)", options: ["1","Ошибка","None","True","0"], answer: "1" },
+  { q: "Что вернет:", code: "(3<4) == (4<3)", options: ["True","False","None","Ошибка","0"], answer: "False" },
+  { q: "Что будет:", code: "(x:= [])[0:1]", options: ["[]","None","Ошибка","[0]","[1]"], answer: "[]" },
+  { q: "Что вернет:", code: "type((i for i in range(3)))", options: ["list","tuple","generator","range","iter"], answer: "generator" },
+  { q: "Что будет:", code: "{1,2,3} & {2,3,4}", options: ["{2,3}","{1,4}","{1,2,3,4}","{}","Ошибка"], answer: "{2,3}" },
+  { q: "Что вернет:", code: "'abc'[::-1]", options: ["abc","cab","cba","bca","Ошибка"], answer: "cba" },
+  { q: "Что будет:", code: "sum([[]], [])", options: ["[]","[[]]","Ошибка","None","0"], answer: "[]" }
+];
+
+// рендер вопросов
+const form = document.getElementById('quizForm');
+questions.forEach((item, idx) => {
+  const div = document.createElement('div');
+  div.className = 'question';
+  div.innerHTML = `
+    <p>${idx+1}. ${item.q}</p>
+    <pre><code class="language-python">${item.code}</code></pre>
+  `;
+  const answersDiv = document.createElement('div');
+  answersDiv.className = 'answers';
+  item.options.forEach(opt => {
+    const id = `q${idx}_${opt}`;
+    answersDiv.innerHTML += `
+      <label><input type="radio" name="q${idx}" value="${opt}"> ${opt}</label>
+    `;
+  });
+  div.appendChild(answersDiv);
+  form.appendChild(div);
+});
+
+// проверка
+function checkAnswers() {
+  let score = 0;
+  questions.forEach((item, idx) => {
+    const selected = form.querySelector(`input[name="q${idx}"]:checked`);
+    const labels = form.querySelectorAll(`input[name="q${idx}"]`);
+    const questionDiv = form.children[idx];
+
+    if (!selected) {
+      questionDiv.classList.add("unanswered");
+    } else if (selected.value === item.answer) {
+      score++;
+      selected.parentElement.classList.add("correct");
+    } else {
+      selected.parentElement.classList.add("wrong");
+      labels.forEach(l => {
+        if (l.value === item.answer) {
+          l.parentElement.classList.add("correct");
+        }
+      });
+    }
+  });
+  const points = Math.round((score / questions.length) * 100);
+  document.getElementById('result').innerText = `Ваш результат: ${points} баллов из 100`;
+}
+</script>
+</body>
+</html>
