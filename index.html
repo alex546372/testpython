@@ -7,6 +7,7 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
   <style>
     body {
       font-family: "Segoe UI", Arial, sans-serif;
@@ -94,12 +95,26 @@
     .unanswered {
       background: #fff3cd !important;
     }
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      padding: 10px;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>Тест по Python (20 вопросов)</h1>
+  <h1>Тест по Python (20+1 вопросов)</h1>
   <form id="quizForm"></form>
+
+  <!-- 21-й вопрос -->
+  <div class="question">
+    <p>21. Напишите функцию <code>longest_increasing_subsequence(arr)</code>, которая возвращает длину самой длинной возрастающей подпоследовательности.  
+    Требование: алгоритм <strong>O(n log n)</strong>.</p>
+    <textarea id="codeAnswer" rows="10" placeholder="Напишите код функции здесь..."></textarea>
+  </div>
+
   <button type="button" onclick="checkAnswers()">Проверить</button>
   <div class="result" id="result"></div>
 </div>
@@ -128,7 +143,8 @@ const questions = [
   { q: "Что будет:", code: "sum([[]], [])", options: ["[]","[[]]","Ошибка","None","0"], answer: "[]" }
 ];
 
-// рендер вопросов
+let pyodideReadyPromise = loadPyodide();
+
 const form = document.getElementById('quizForm');
 questions.forEach((item, idx) => {
   const div = document.createElement('div');
@@ -140,7 +156,6 @@ questions.forEach((item, idx) => {
   const answersDiv = document.createElement('div');
   answersDiv.className = 'answers';
   item.options.forEach(opt => {
-    const id = `q${idx}_${opt}`;
     answersDiv.innerHTML += `
       <label><input type="radio" name="q${idx}" value="${opt}"> ${opt}</label>
     `;
@@ -149,9 +164,10 @@ questions.forEach((item, idx) => {
   form.appendChild(div);
 });
 
-// проверка
-function checkAnswers() {
+async function checkAnswers() {
   let score = 0;
+  
+  // Проверка первых 20 вопросов
   questions.forEach((item, idx) => {
     const selected = form.querySelector(`input[name="q${idx}"]:checked`);
     const labels = form.querySelectorAll(`input[name="q${idx}"]`);
@@ -171,7 +187,52 @@ function checkAnswers() {
       });
     }
   });
-  const points = Math.round((score / questions.length) * 100);
+
+  // Проверка 21-го вопроса (через Pyodide)
+  let code = document.getElementById("codeAnswer").value;
+  let pyodide = await pyodideReadyPromise;
+  let codeCorrect = false;
+  try {
+    await pyodide.runPythonAsync(code);
+
+    // Мелкие тесты
+    const smallTests = [
+      [[10, 9, 2, 5, 3, 7, 101, 18], 4],
+      [[0, 1, 0, 3, 2, 3], 4],
+      [[7, 7, 7, 7], 1],
+      [[1, 2, 3, 4, 5], 5]
+    ];
+
+    for (let [arr, expected] of smallTests) {
+      let result = await pyodide.runPythonAsync(`longest_increasing_subsequence(${JSON.stringify(arr)})`);
+      if (parseInt(result) !== expected) {
+        codeCorrect = false;
+        throw "Wrong";
+      }
+    }
+
+    // Большой тест для O(n log n)
+    const bigArr = Array.from({length: 50000}, (_, i) => i);
+    let start = performance.now();
+    let bigResult = await pyodide.runPythonAsync(`longest_increasing_subsequence(${JSON.stringify(bigArr)})`);
+    let end = performance.now();
+    if (parseInt(bigResult) === 50000 && (end - start) < 2000) {
+      codeCorrect = true;
+    }
+
+  } catch (err) {
+    codeCorrect = false;
+  }
+  
+  if (codeCorrect) {
+    score += 5; // Бонусные баллы
+    document.getElementById("codeAnswer").style.background = "#d4edda";
+  } else {
+    document.getElementById("codeAnswer").style.background = "#f8d7da";
+  }
+
+  const maxScore = questions.length + 5;
+  const points = Math.round((score / maxScore) * 100);
   document.getElementById('result').innerText = `Ваш результат: ${points} баллов из 100`;
 }
 </script>
